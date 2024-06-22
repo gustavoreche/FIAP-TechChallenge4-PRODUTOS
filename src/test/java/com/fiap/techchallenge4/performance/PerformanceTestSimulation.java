@@ -30,6 +30,19 @@ public class PerformanceTestSimulation extends Simulation {
                     """))
             .check(status().is(201));
 
+    ActionBuilder atualizaProdutoRequest = http("atualiza produto")
+            .put("/produto/${ean}")
+            .header("Content-Type", "application/json")
+            .body(StringBody("""
+                              {
+                                "nome": "Produto Teste",
+                                "descricao": "Descrição do produto de teste",
+                                "preco": "15.00",
+                                "quantidade": 100
+                              }
+                    """))
+            .check(status().is(200));
+
     ScenarioBuilder cenarioCadastraProduto = scenario("Cadastra produto")
             .exec(session -> {
                 long ean = System.currentTimeMillis();
@@ -37,10 +50,27 @@ public class PerformanceTestSimulation extends Simulation {
             })
             .exec(cadastraProdutoRequest);
 
+    ScenarioBuilder cenarioAtualizaProduto = scenario("Atualiza produto")
+            .exec(session -> {
+                long ean = System.currentTimeMillis() + 123456789L;
+                return session.set("ean", ean);
+            })
+            .exec(cadastraProdutoRequest)
+            .exec(atualizaProdutoRequest);
+
 
     {
         setUp(
                 cenarioCadastraProduto.injectOpen(
+                        rampUsersPerSec(1)
+                                .to(10)
+                                .during(Duration.ofSeconds(10)),
+                        constantUsersPerSec(10)
+                                .during(Duration.ofSeconds(20)),
+                        rampUsersPerSec(10)
+                                .to(1)
+                                .during(Duration.ofSeconds(10))),
+                cenarioAtualizaProduto.injectOpen(
                         rampUsersPerSec(1)
                                 .to(10)
                                 .during(Duration.ofSeconds(10)),

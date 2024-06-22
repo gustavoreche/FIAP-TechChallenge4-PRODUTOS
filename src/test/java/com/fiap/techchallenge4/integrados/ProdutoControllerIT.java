@@ -1,6 +1,7 @@
 package com.fiap.techchallenge4.integrados;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fiap.techchallenge4.infrastructure.controller.dto.AtualizaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.CriaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.model.ProdutoEntity;
 import com.fiap.techchallenge4.infrastructure.repository.ProdutoRepository;
@@ -20,8 +21,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.stream.Stream;
 
-import static com.fiap.techchallenge4.infrastructure.controller.ProdutoController.URL_PRODUTO;
-import static com.fiap.techchallenge4.infrastructure.controller.ProdutoController.URL_PRODUTO_IMPORTA;
+import static com.fiap.techchallenge4.infrastructure.controller.ProdutoController.*;
 
 
 @AutoConfigureMockMvc
@@ -208,6 +208,76 @@ public class ProdutoControllerIT {
         Assertions.assertNotNull(produto.getDataDeCriacao());
     }
 
+    @Test
+    public void importa_deveRetornar200_salvaNaBaseDeDados() throws Exception {
+
+        this.produtoRepository.save(ProdutoEntity.builder()
+                .ean(7894900011517L)
+                .nome("Produto Teste")
+                .descricao("Descrição do Produto Teste")
+                .preco(new BigDecimal("100"))
+                .quantidade(100L)
+                .dataDeCriacao(LocalDateTime.now())
+                .build());
+
+        var request = new AtualizaProdutoDTO(
+                "Produto Teste",
+                "Descrição do Produto Teste",
+                new BigDecimal("95"),
+                150L
+        );
+        var objectMapper = this.objectMapper
+                .writer()
+                .withDefaultPrettyPrinter();
+        var jsonRequest = objectMapper.writeValueAsString(request);
+
+        this.mockMvc
+                .perform(MockMvcRequestBuilders.put(URL_PRODUTO_COM_EAN.replace("{ean}", "7894900011517"))
+                        .content(jsonRequest)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers
+                        .status()
+                        .isOk()
+                )
+                .andReturn();
+
+        var produto = this.produtoRepository.findAll().get(0);
+
+        Assertions.assertEquals(7894900011517L, produto.getEan());
+        Assertions.assertEquals("Produto Teste", produto.getNome());
+        Assertions.assertEquals("Descrição do Produto Teste", produto.getDescricao());
+        Assertions.assertEquals(new BigDecimal("95.00"), produto.getPreco());
+        Assertions.assertEquals(250L, produto.getQuantidade());
+        Assertions.assertNotNull(produto.getDataDeCriacao());
+    }
+
+    @Test
+    public void atualiza_deveRetornar204_naoSalvaNaBaseDeDados() throws Exception {
+
+        var request = new AtualizaProdutoDTO(
+                "Produto Teste",
+                "Descrição do Produto Teste",
+                new BigDecimal("100"),
+                100L
+        );
+        var objectMapper = this.objectMapper
+                .writer()
+                .withDefaultPrettyPrinter();
+        var jsonRequest = objectMapper.writeValueAsString(request);
+
+        this.mockMvc
+                .perform(MockMvcRequestBuilders.put(URL_PRODUTO_COM_EAN.replace("{ean}", "7894900011517"))
+                        .content(jsonRequest)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers
+                        .status()
+                        .isNoContent()
+                )
+                .andReturn();
+
+        Assertions.assertEquals(0, this.produtoRepository.findAll().size());
+    }
+
     @ParameterizedTest
     @MethodSource("requestValidandoCampos")
     public void cadastra_camposInvalidos_naoBuscaNaBaseDeDados(Long ean,
@@ -229,6 +299,34 @@ public class ProdutoControllerIT {
 
         this.mockMvc
                 .perform(MockMvcRequestBuilders.post(URL_PRODUTO)
+                        .content(jsonRequest)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers
+                        .status()
+                        .isBadRequest()
+                );
+    }
+
+    @ParameterizedTest
+    @MethodSource("requestValidandoCampos")
+    public void atualiza_camposInvalidos_naoBuscaNaBaseDeDados(Long ean,
+                                                               String nome,
+                                                               String descricao,
+                                                               BigDecimal preco,
+                                                               Long quantidade) throws Exception {
+        var request = new AtualizaProdutoDTO(
+                nome,
+                descricao,
+                preco,
+                quantidade
+        );
+        var objectMapper = this.objectMapper
+                .writer()
+                .withDefaultPrettyPrinter();
+        var jsonRequest = objectMapper.writeValueAsString(request);
+
+        this.mockMvc
+                .perform(MockMvcRequestBuilders.put(URL_PRODUTO_COM_EAN.replace("{ean}", ean.toString()))
                         .content(jsonRequest)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers

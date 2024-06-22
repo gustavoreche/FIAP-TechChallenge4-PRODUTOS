@@ -1,6 +1,7 @@
 package com.fiap.techchallenge4.unitario;
 
 import com.fiap.techchallenge4.infrastructure.controller.ProdutoController;
+import com.fiap.techchallenge4.infrastructure.controller.dto.AtualizaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.CriaProdutoDTO;
 import com.fiap.techchallenge4.useCase.impl.ProdutoUseCaseImpl;
 import org.junit.jupiter.api.Assertions;
@@ -12,6 +13,7 @@ import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -109,6 +111,66 @@ public class ProdutoControllerTest {
         Assertions.assertEquals(HttpStatus.CONFLICT, produto.getStatusCode());
     }
 
+    @Test
+    public void atualiza_deveRetornar200_salvaNaBaseDeDados() {
+        // preparação
+        var service = Mockito.mock(ProdutoUseCaseImpl.class);
+        Mockito.when(service.atualiza(
+                                any(Long.class),
+                                any(AtualizaProdutoDTO.class)
+                        )
+                )
+                .thenReturn(
+                        true
+                );
+
+        var controller = new ProdutoController(service);
+
+        // execução
+        var produto = controller.atualiza(
+                7894900011517L,
+                new AtualizaProdutoDTO(
+                        "Produto Teste",
+                        "Descrição do Produto Teste",
+                        new BigDecimal("100"),
+                        100L
+                )
+        );
+
+        // avaliação
+        Assertions.assertEquals(HttpStatus.OK, produto.getStatusCode());
+    }
+
+    @Test
+    public void atualiza_deveRetornar204_naoSalvaNaBaseDeDados() {
+        // preparação
+        var service = Mockito.mock(ProdutoUseCaseImpl.class);
+        Mockito.when(service.atualiza(
+                                any(Long.class),
+                                any(AtualizaProdutoDTO.class)
+                        )
+                )
+                .thenReturn(
+                        false
+                );
+
+        var controller = new ProdutoController(service);
+
+        // execução
+        var produto = controller.atualiza(
+                7894900011517L,
+                new AtualizaProdutoDTO(
+                        "Produto Teste",
+                        "Descrição do Produto Teste",
+                        new BigDecimal("100"),
+                        100L
+                )
+        );
+
+        // avaliação
+        Assertions.assertEquals(HttpStatus.NO_CONTENT, produto.getStatusCode());
+    }
+
     @ParameterizedTest
     @MethodSource("requestValidandoCampos")
     public void cadastra_camposInvalidos_naoBuscaNaBaseDeDados(Long ean,
@@ -133,6 +195,40 @@ public class ProdutoControllerTest {
             controller.cadastra(
                     new CriaProdutoDTO(
                             ean,
+                            nome,
+                            descricao,
+                            preco,
+                            quantidade
+                    )
+            );
+        });
+    }
+
+    @ParameterizedTest
+    @MethodSource("requestValidandoCampos")
+    public void atualiza_camposInvalidos_naoBuscaNaBaseDeDados(Long ean,
+                                                               String nome,
+                                                               String descricao,
+                                                               BigDecimal preco,
+                                                               Long quantidade) {
+        // preparação
+        var service = Mockito.mock(ProdutoUseCaseImpl.class);
+        Mockito.doThrow(
+                        new IllegalArgumentException("Campos inválidos!")
+                )
+                .when(service)
+                .atualiza(
+                        any(Long.class),
+                        any(AtualizaProdutoDTO.class)
+                );
+
+        var controller = new ProdutoController(service);
+
+        // execução e avaliação
+        var excecao = Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            controller.atualiza(
+                    Objects.isNull(ean) ? -1L : ean,
+                    new AtualizaProdutoDTO(
                             nome,
                             descricao,
                             preco,

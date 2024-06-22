@@ -19,11 +19,12 @@ public class CadastraProdutoSteps {
 
     private Response response;
     private CriaProdutoDTO request;
+    private final Long ean = System.currentTimeMillis();
 
     @Dado("que tenho dados validos de um produto")
     public void tenhoDadosValidosDeUmProduto() {
         this.request = new CriaProdutoDTO(
-                123456789L,
+                this.ean,
                 "Produto Teste",
                 "Descrição do produto teste",
                 new BigDecimal("10.00"),
@@ -34,7 +35,7 @@ public class CadastraProdutoSteps {
     @Dado("que tenho dados validos de um produto que ja esta cadastrado")
     public void tenhoDadosValidosDeUmProdutoQueJaEstaCadastrado() {
         this.request = new CriaProdutoDTO(
-                123456789L,
+                this.ean,
                 "Produto Teste",
                 "Descrição do produto teste",
                 new BigDecimal("10.00"),
