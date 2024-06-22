@@ -1,6 +1,7 @@
 package com.fiap.techchallenge4.useCase.impl;
 
 import com.fiap.techchallenge4.domain.Produto;
+import com.fiap.techchallenge4.infrastructure.controller.dto.AtualizaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.CriaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.model.ProdutoEntity;
 import com.fiap.techchallenge4.infrastructure.repository.ProdutoRepository;
@@ -67,6 +68,37 @@ public class ProdutoUseCaseImpl implements ProdutoUseCase {
         }
         System.out.println("Produto já cadastrado");
         return false;
+
+    }
+
+    @Override
+    public boolean atualiza(final Long ean,
+                            final AtualizaProdutoDTO dadosProduto) {
+        final var produto = new Produto(
+                ean,
+                dadosProduto.nome(),
+                dadosProduto.descricao(),
+                dadosProduto.preco(),
+                dadosProduto.quantidade()
+        );
+
+        final var produtoNaBase = this.repository.findById(ean);
+        if(produtoNaBase.isEmpty()) {
+            System.out.println("Produto não está cadastrado");
+            return false;
+        }
+
+        var produtoEntity = new ProdutoEntity(
+                produto.getEan(),
+                produto.getNome(),
+                produto.getDescricao(),
+                produto.getPreco(),
+                produto.getQuantidade() + produtoNaBase.get().getQuantidade(),
+                LocalDateTime.now()
+        );
+
+        this.repository.save(produtoEntity);
+        return true;
 
     }
 

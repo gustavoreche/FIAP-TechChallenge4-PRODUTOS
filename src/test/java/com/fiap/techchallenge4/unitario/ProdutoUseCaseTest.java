@@ -1,5 +1,6 @@
 package com.fiap.techchallenge4.unitario;
 
+import com.fiap.techchallenge4.infrastructure.controller.dto.AtualizaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.CriaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.model.ProdutoEntity;
 import com.fiap.techchallenge4.infrastructure.repository.ProdutoRepository;
@@ -11,11 +12,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobParametersInvalidException;
 import org.springframework.batch.core.launch.JobLauncher;
-import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
-import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
-import org.springframework.batch.core.repository.JobRestartException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -102,6 +99,96 @@ public class ProdutoUseCaseTest {
         verify(repository, times(0)).save(Mockito.any());
     }
 
+    @Test
+    public void atualiza_salvaNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.save(Mockito.any()))
+                .thenReturn(
+                        new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        )
+                );
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.of(new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        ))
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução
+        service.atualiza(
+                7894900011517L,
+                new AtualizaProdutoDTO(
+                        "Produto Teste",
+                        "Descrição do Produto Teste",
+                        new BigDecimal("100"),
+                        100L
+                )
+        );
+
+        // avaliação
+        verify(repository, times(1)).save(Mockito.any());
+    }
+
+    @Test
+    public void atualiza_produtoNaoEstaCadastrado_naoSalvaNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.of(
+                                new ProdutoEntity(
+                                        7894900011517L,
+                                        "Produto Teste",
+                                        "Descrição do Produto Teste",
+                                        new BigDecimal("100"),
+                                        100,
+                                        LocalDateTime.now()
+                                )
+                        )
+                );
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.empty()
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução
+        service.atualiza(
+                7894900011517L,
+                new AtualizaProdutoDTO(
+                        "Produto Teste",
+                        "Descrição do Produto Teste",
+                        new BigDecimal("100"),
+                        100L
+                )
+        );
+
+        // avaliação
+        verify(repository, times(1)).findById(Mockito.any());
+        verify(repository, times(0)).save(Mockito.any());
+    }
+
     @ParameterizedTest
     @MethodSource("requestValidandoCampos")
     public void cadastra_camposInvalidos_naoSalvaNaBaseDeDados(Long ean,
@@ -133,6 +220,58 @@ public class ProdutoUseCaseTest {
             service.cadastra(
                     new CriaProdutoDTO(
                             ean,
+                            nome,
+                            descricao,
+                            preco,
+                            quantidade
+                    )
+            );
+        });
+        verify(repository, times(0)).save(Mockito.any());
+    }
+
+    @ParameterizedTest
+    @MethodSource("requestValidandoCampos")
+    public void atualiza_camposInvalidos_naoSalvaNaBaseDeDados(Long ean,
+                                                               String nome,
+                                                               String descricao,
+                                                               BigDecimal preco,
+                                                               Long quantidade) {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.save(Mockito.any()))
+                .thenReturn(
+                        new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        )
+                );
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.of(new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        ))
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução e avaliação
+        var excecao = Assertions.assertThrows(RuntimeException.class, () -> {
+            service.atualiza(
+                    ean,
+                    new AtualizaProdutoDTO(
                             nome,
                             descricao,
                             preco,
