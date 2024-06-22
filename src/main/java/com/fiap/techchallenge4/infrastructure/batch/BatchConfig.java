@@ -12,16 +12,12 @@ import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
-import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
-import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.transaction.PlatformTransactionManager;
-
-import javax.sql.DataSource;
 
 @Configuration
 public class BatchConfig {
@@ -64,25 +60,13 @@ public class BatchConfig {
     }
 
     @Bean
-    public ItemProcessor<Produto, ProdutoEntity> processor() {
-        return new ProcessadorProduto();
+    public ItemProcessor<Produto, ProdutoEntity> processor(ProcessadorProduto processor) {
+        return processor;
     }
 
     @Bean
-    public ItemWriter<ProdutoEntity> writer(DataSource dataSource) {
-        return new JdbcBatchItemWriterBuilder<ProdutoEntity>()
-                .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
-                .dataSource(dataSource)
-                .sql("INSERT INTO tb_produto " +
-                        "(ean, nome, descricao, preco, quantidade, data_de_criacao) " +
-                        "VALUES (:ean, :nome, :descricao, :preco, :quantidade, :dataDeCriacao) " +
-                        "ON CONFLICT (ean) DO UPDATE SET " +
-                        "nome = :nome, " +
-                        "descricao = :descricao, " +
-                        "preco = :preco, " +
-                        "quantidade = tb_produto.quantidade + :quantidade, " +
-                        "data_de_criacao = :dataDeCriacao")
-                .build();
+    public ItemWriter<ProdutoEntity> writer(ProdutoWriter writer) {
+        return writer;
     }
 
 }

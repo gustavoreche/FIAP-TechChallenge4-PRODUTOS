@@ -3,9 +3,11 @@ package com.fiap.techchallenge4.domain.batch;
 import com.fiap.techchallenge4.domain.Produto;
 import com.fiap.techchallenge4.infrastructure.model.ProdutoEntity;
 import org.springframework.batch.item.ItemProcessor;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
+@Component
 public class ProcessadorProduto implements ItemProcessor<Produto, ProdutoEntity> {
 
     @Override
