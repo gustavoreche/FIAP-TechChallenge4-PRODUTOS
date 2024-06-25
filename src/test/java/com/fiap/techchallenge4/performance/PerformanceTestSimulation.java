@@ -43,6 +43,16 @@ public class PerformanceTestSimulation extends Simulation {
                     """))
             .check(status().is(200));
 
+    ActionBuilder deletaProdutoRequest = http("deleta produto")
+            .delete("/produto/${ean}")
+            .header("Content-Type", "application/json")
+            .check(status().is(200));
+
+    ActionBuilder buscaProdutoRequest = http("busca produto")
+            .get("/produto/${ean}")
+            .header("Content-Type", "application/json")
+            .check(status().is(200));
+
     ScenarioBuilder cenarioCadastraProduto = scenario("Cadastra produto")
             .exec(session -> {
                 long ean = System.currentTimeMillis();
@@ -58,6 +68,22 @@ public class PerformanceTestSimulation extends Simulation {
             .exec(cadastraProdutoRequest)
             .exec(atualizaProdutoRequest);
 
+    ScenarioBuilder cenarioDeletaProduto = scenario("Deleta produto")
+            .exec(session -> {
+                long ean = System.currentTimeMillis() + 333333333L;
+                return session.set("ean", ean);
+            })
+            .exec(cadastraProdutoRequest)
+            .exec(deletaProdutoRequest);
+
+    ScenarioBuilder cenarioBuscaProduto = scenario("Busca produto")
+            .exec(session -> {
+                long ean = System.currentTimeMillis() + 777777777L;
+                return session.set("ean", ean);
+            })
+            .exec(cadastraProdutoRequest)
+            .exec(buscaProdutoRequest);
+
 
     {
         setUp(
@@ -71,6 +97,24 @@ public class PerformanceTestSimulation extends Simulation {
                                 .to(1)
                                 .during(Duration.ofSeconds(10))),
                 cenarioAtualizaProduto.injectOpen(
+                        rampUsersPerSec(1)
+                                .to(10)
+                                .during(Duration.ofSeconds(10)),
+                        constantUsersPerSec(10)
+                                .during(Duration.ofSeconds(20)),
+                        rampUsersPerSec(10)
+                                .to(1)
+                                .during(Duration.ofSeconds(10))),
+                cenarioDeletaProduto.injectOpen(
+                        rampUsersPerSec(1)
+                                .to(10)
+                                .during(Duration.ofSeconds(10)),
+                        constantUsersPerSec(10)
+                                .during(Duration.ofSeconds(20)),
+                        rampUsersPerSec(10)
+                                .to(1)
+                                .during(Duration.ofSeconds(10))),
+                cenarioBuscaProduto.injectOpen(
                         rampUsersPerSec(1)
                                 .to(10)
                                 .during(Duration.ofSeconds(10)),

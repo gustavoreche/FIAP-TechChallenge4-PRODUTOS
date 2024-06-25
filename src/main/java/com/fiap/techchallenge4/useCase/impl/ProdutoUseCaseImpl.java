@@ -1,8 +1,10 @@
 package com.fiap.techchallenge4.useCase.impl;
 
+import com.fiap.techchallenge4.domain.Ean;
 import com.fiap.techchallenge4.domain.Produto;
 import com.fiap.techchallenge4.infrastructure.controller.dto.AtualizaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.CriaProdutoDTO;
+import com.fiap.techchallenge4.infrastructure.controller.dto.ProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.model.ProdutoEntity;
 import com.fiap.techchallenge4.infrastructure.repository.ProdutoRepository;
 import com.fiap.techchallenge4.useCase.ProdutoUseCase;
@@ -99,6 +101,41 @@ public class ProdutoUseCaseImpl implements ProdutoUseCase {
 
         this.repository.save(produtoEntity);
         return true;
+
+    }
+
+    @Override
+    public boolean deleta(final Long ean) {
+        final var eanObjeto = new Ean(ean);
+
+        final var produtoNaBase = this.repository.findById(eanObjeto.getNumero());
+        if(produtoNaBase.isEmpty()) {
+            System.out.println("Produto não está cadastrado");
+            return false;
+        }
+        this.repository.deleteById(eanObjeto.getNumero());
+        return true;
+
+    }
+
+    @Override
+    public ProdutoDTO busca(final Long ean) {
+        final var eanObjeto = new Ean(ean);
+
+        final var produtoNaBase = this.repository.findById(eanObjeto.getNumero());
+        if(produtoNaBase.isEmpty()) {
+            System.out.println("Produto não está cadastrado");
+            return null;
+        }
+        final var produto = produtoNaBase.get();
+        return new ProdutoDTO(
+                produto.getEan(),
+                produto.getNome(),
+                produto.getDescricao(),
+                produto.getPreco(),
+                produto.getQuantidade(),
+                produto.getDataDeCriacao()
+        );
 
     }
 

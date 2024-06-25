@@ -1,5 +1,6 @@
 package com.fiap.techchallenge4.integrados;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fiap.techchallenge4.infrastructure.controller.dto.AtualizaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.CriaProdutoDTO;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -209,7 +211,7 @@ public class ProdutoControllerIT {
     }
 
     @Test
-    public void importa_deveRetornar200_salvaNaBaseDeDados() throws Exception {
+    public void atualiza_deveRetornar200_salvaNaBaseDeDados() throws Exception {
 
         this.produtoRepository.save(ProdutoEntity.builder()
                 .ean(7894900011517L)
@@ -278,6 +280,95 @@ public class ProdutoControllerIT {
         Assertions.assertEquals(0, this.produtoRepository.findAll().size());
     }
 
+    @Test
+    public void deleta_deveRetornar200_deletaNaBaseDeDados() throws Exception {
+
+        this.produtoRepository.save(ProdutoEntity.builder()
+                .ean(7894900011517L)
+                .nome("Produto Teste")
+                .descricao("Descrição do Produto Teste")
+                .preco(new BigDecimal("100"))
+                .quantidade(100L)
+                .dataDeCriacao(LocalDateTime.now())
+                .build());
+
+        this.mockMvc
+                .perform(MockMvcRequestBuilders.delete(URL_PRODUTO_COM_EAN.replace("{ean}", "7894900011517"))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers
+                        .status()
+                        .isOk()
+                )
+                .andReturn();
+
+        Assertions.assertEquals(0, this.produtoRepository.findAll().size());
+    }
+
+    @Test
+    public void deleta_deveRetornar204_naoDeletaNaBaseDeDados() throws Exception {
+
+        this.mockMvc
+                .perform(MockMvcRequestBuilders.delete(URL_PRODUTO_COM_EAN.replace("{ean}", "7894900011517"))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers
+                        .status()
+                        .isNoContent()
+                )
+                .andReturn();
+
+        Assertions.assertEquals(0, this.produtoRepository.findAll().size());
+    }
+
+    @Test
+    public void busca_deveRetornar200_buscaNaBaseDeDados() throws Exception {
+
+        this.produtoRepository.save(ProdutoEntity.builder()
+                .ean(7894900011517L)
+                .nome("Produto Teste")
+                .descricao("Descricao do Produto Teste")
+                .preco(new BigDecimal("100"))
+                .quantidade(100L)
+                .dataDeCriacao(LocalDateTime.now())
+                .build());
+
+        var response = this.mockMvc
+                .perform(MockMvcRequestBuilders.get(URL_PRODUTO_COM_EAN.replace("{ean}", "7894900011517"))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers
+                        .status()
+                        .isOk()
+                )
+                .andReturn();
+        var responseAppString = response.getResponse().getContentAsString();
+        var responseApp = this.objectMapper
+                .readValue(responseAppString, new TypeReference<ProdutoEntity>() {});
+
+        var produto = this.produtoRepository.findAll().get(0);
+
+        Assertions.assertEquals(1, this.produtoRepository.findAll().size());
+        Assertions.assertEquals(responseApp.getEan(), produto.getEan());
+        Assertions.assertEquals(responseApp.getNome(), produto.getNome());
+        Assertions.assertEquals(responseApp.getDescricao(), produto.getDescricao());
+        Assertions.assertEquals(responseApp.getPreco(), produto.getPreco());
+        Assertions.assertEquals(responseApp.getQuantidade(), produto.getQuantidade());
+        Assertions.assertEquals(responseApp.getDataDeCriacao(), produto.getDataDeCriacao());
+    }
+
+    @Test
+    public void busca_deveRetornar204_naoEcontraNaBaseDeDados() throws Exception {
+
+        this.mockMvc
+                .perform(MockMvcRequestBuilders.get(URL_PRODUTO_COM_EAN.replace("{ean}", "7894900011517"))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers
+                        .status()
+                        .isNoContent()
+                )
+                .andReturn();
+
+        Assertions.assertEquals(0, this.produtoRepository.findAll().size());
+    }
+
     @ParameterizedTest
     @MethodSource("requestValidandoCampos")
     public void cadastra_camposInvalidos_naoBuscaNaBaseDeDados(Long ean,
@@ -328,6 +419,36 @@ public class ProdutoControllerIT {
         this.mockMvc
                 .perform(MockMvcRequestBuilders.put(URL_PRODUTO_COM_EAN.replace("{ean}", ean.toString()))
                         .content(jsonRequest)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers
+                        .status()
+                        .isBadRequest()
+                );
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {
+            -1L,
+            0
+    })
+    public void deleta_camposInvalidos_naoDeletaNaBaseDeDados(Long ean) throws Exception {
+        this.mockMvc
+                .perform(MockMvcRequestBuilders.delete(URL_PRODUTO_COM_EAN.replace("{ean}", ean.toString()))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers
+                        .status()
+                        .isBadRequest()
+                );
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {
+            -1L,
+            0
+    })
+    public void busca_camposInvalidos_naoBuscaNaBaseDeDados(Long ean) throws Exception {
+        this.mockMvc
+                .perform(MockMvcRequestBuilders.get(URL_PRODUTO_COM_EAN.replace("{ean}", ean.toString()))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers
                         .status()

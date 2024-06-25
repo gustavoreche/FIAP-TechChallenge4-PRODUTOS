@@ -2,6 +2,7 @@ package com.fiap.techchallenge4.infrastructure.controller;
 
 import com.fiap.techchallenge4.infrastructure.controller.dto.AtualizaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.CriaProdutoDTO;
+import com.fiap.techchallenge4.infrastructure.controller.dto.ProdutoDTO;
 import com.fiap.techchallenge4.useCase.ProdutoUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -9,6 +10,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Objects;
 
 import static com.fiap.techchallenge4.infrastructure.controller.ProdutoController.URL_PRODUTO;
 
@@ -93,13 +96,13 @@ public class ProdutoController {
 	@Operation(
 			summary = "Serviço para buscar um produto"
 	)
-	@DeleteMapping("/{ean}")
+	@GetMapping("/{ean}")
 	public ResponseEntity<ProdutoDTO> busca(@PathVariable("ean") final Long ean) {
-		final var buscou = this.service.busca(ean);
-		if(buscou) {
+		final var produto = this.service.busca(ean);
+		if(Objects.nonNull(produto)) {
 			return ResponseEntity
 					.status(HttpStatus.OK)
-					.build();
+					.body(produto);
 		}
 		return ResponseEntity
 				.status(HttpStatus.NO_CONTENT)

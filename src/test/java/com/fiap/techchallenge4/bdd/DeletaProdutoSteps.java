@@ -17,14 +17,13 @@ import static com.fiap.techchallenge4.infrastructure.controller.ProdutoControlle
 import static io.restassured.RestAssured.given;
 
 
-public class AtualizaProdutoSteps {
+public class DeletaProdutoSteps {
 
     private Response response;
-    private AtualizaProdutoDTO request;
     private Long ean;
 
-    @Dado("que tenho os dados validos de um produto que ja esta cadastrado")
-    public void tenhoOsDadosValidosDeUmProdutoQueJaEstaCadastrado() {
+    @Dado("que informo um produto que ja esta cadastrado")
+    public void queInformoUmProdutoQueJaEstaCadastrado() {
         this.ean = System.currentTimeMillis();
         final var request = new CriaProdutoDTO(
                 this.ean,
@@ -35,44 +34,30 @@ public class AtualizaProdutoSteps {
         );
 
         RestAssured.baseURI = "http://localhost:8080";
-        given()
+        this.response = given()
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .body(request)
                 .when()
                 .post(URL_PRODUTO);
-
-        this.request = new AtualizaProdutoDTO(
-                "Produto Teste",
-                "Descrição do produto teste",
-                new BigDecimal("15.00"),
-                10L
-        );
     }
 
-    @Dado("que tenho os dados validos de um produto")
-    public void tenhoOsDadosValidosDeUmProduto() {
+    @Dado("que informo um produto nao cadastrado")
+    public void queInformoUmProdutoNaoCadastrado() {
         this.ean = System.currentTimeMillis();
-        this.request = new AtualizaProdutoDTO(
-                "Produto Teste",
-                "Descrição do produto teste",
-                new BigDecimal("10.00"),
-                10L
-        );
     }
 
 
-    @Quando("atualizo esse produto")
-    public void atualizoEsseProduto() {
+    @Quando("deleto esse produto")
+    public void deletoEsseProduto() {
         RestAssured.baseURI = "http://localhost:8080";
         this.response = given()
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
-                .body(this.request)
                 .when()
-                .put(URL_PRODUTO_COM_EAN.replace("{ean}", this.ean.toString()));
+                .delete(URL_PRODUTO_COM_EAN.replace("{ean}", this.ean.toString()));
     }
 
-    @Entao("recebo uma resposta que o produto foi atualizado com sucesso")
-    public void receboUmaRespostaQueOProdutoFoiAtualizadoComSucesso() {
+    @Entao("recebo uma resposta que o produto foi deletado com sucesso")
+    public void receboUmaRespostaQueOProdutoFoiDeletadoComSucesso() {
         this.response
                 .prettyPeek()
                 .then()
@@ -80,8 +65,8 @@ public class AtualizaProdutoSteps {
         ;
     }
 
-    @Entao("recebo uma resposta que o produto nao esta cadastrado")
-    public void receboUmaRespostaQueOProdutoNaoEstaCadastrado() {
+    @Entao("recebo uma resposta que o produto nao foi cadastrado")
+    public void receboUmaRespostaQueOProdutoNaoFoiCadastrado() {
         this.response
                 .prettyPeek()
                 .then()

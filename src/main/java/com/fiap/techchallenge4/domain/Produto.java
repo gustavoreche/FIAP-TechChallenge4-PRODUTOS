@@ -13,7 +13,7 @@ import java.util.Objects;
 @Setter
 @Builder
 public class Produto {
-    private long ean;
+    private Long ean;
     private String nome;
     private String descricao;
     private BigDecimal preco;
@@ -50,7 +50,7 @@ public class Produto {
             throw new IllegalArgumentException("QUANTIDADE NAO PODE SER NULO OU MENOR E IGUAL A ZERO E MAIOR QUE 1000!");
         }
 
-        this.ean = ean;
+        this.ean = new Ean(ean).getNumero();
         this.nome = nome;
         this.descricao = descricao;
         this.preco = preco;
