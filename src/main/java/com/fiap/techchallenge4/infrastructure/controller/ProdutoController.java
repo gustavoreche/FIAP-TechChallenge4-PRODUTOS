@@ -26,7 +26,7 @@ public class ProdutoController {
 	public static final String URL_PRODUTO = "/produto";
 	public static final String URL_PRODUTO_IMPORTA = URL_PRODUTO + "/importa";
 	public static final String URL_PRODUTO_COM_EAN = URL_PRODUTO + "/{ean}";
-	public static final String URL_PRODUTO_COM_EAN_E_QUANTIDADE = URL_PRODUTO + "/{ean}/{quantidade}";
+	public static final String URL_PRODUTO_COM_EAN_E_QUANTIDADE = URL_PRODUTO + "/estoque/{ean}/{quantidade}";
 
 	private final ProdutoUseCase service;
 
@@ -113,7 +113,7 @@ public class ProdutoController {
 	@Operation(
 			summary = "Serviço para verificar se um produto tem estoque"
 	)
-	@GetMapping("/{ean}/{quantidade}")
+	@GetMapping("/estoque/{ean}/{quantidade}")
 	public ResponseEntity<Boolean> temEstoque(@PathVariable("ean") final Long ean,
 											  @PathVariable("quantidade") final Long quantidade) {
 		final var produto = this.service.temEstoque(ean, quantidade);
