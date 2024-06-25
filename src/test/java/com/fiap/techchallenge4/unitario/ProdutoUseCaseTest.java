@@ -286,6 +286,126 @@ public class ProdutoUseCaseTest {
         verify(repository, times(1)).findById(Mockito.any());
     }
 
+    @Test
+    public void temEstoque_quantidadeIgual_buscaNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.of(new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        ))
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução
+        Boolean response = service.temEstoque(
+                7894900011517L,
+                100L
+        );
+
+        // avaliação
+        verify(repository, times(1)).findById(Mockito.any());
+        Assertions.assertTrue(response);
+    }
+
+    @Test
+    public void temEstoque_quantidadeMenor_buscaNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.of(new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        ))
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução
+        Boolean response = service.temEstoque(
+                7894900011517L,
+                99L
+        );
+
+        // avaliação
+        verify(repository, times(1)).findById(Mockito.any());
+        Assertions.assertTrue(response);
+    }
+
+    @Test
+    public void temEstoque_quantidadeMaior_buscaNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.of(new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        ))
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução
+        Boolean response = service.temEstoque(
+                7894900011517L,
+                101L
+        );
+
+        // avaliação
+        verify(repository, times(1)).findById(Mockito.any());
+        Assertions.assertFalse(response);
+    }
+
+    @Test
+    public void temEstoque_produtoNaoEstaCadastrado_naoEncontraNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.empty()
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução
+        service.temEstoque(
+                7894900011517L,
+                1L
+        );
+
+        // avaliação
+        verify(repository, times(1)).findById(Mockito.any());
+    }
+
     @ParameterizedTest
     @MethodSource("requestValidandoCampos")
     public void cadastra_camposInvalidos_naoSalvaNaBaseDeDados(Long ean,
@@ -427,6 +547,39 @@ public class ProdutoUseCaseTest {
         verify(repository, times(0)).deleteById(Mockito.any());
     }
 
+    @ParameterizedTest
+    @MethodSource("requestValidandoDoisCampos")
+    public void temEstoque_camposInvalidos_naoBuscaNaBaseDeDados(Long ean,
+                                                                 Long quantidade) {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.of(new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        ))
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução e avaliação
+        var excecao = Assertions.assertThrows(RuntimeException.class, () -> {
+            service.temEstoque(
+                    ean,
+                    quantidade
+            );
+        });
+        verify(repository, times(0)).findById(Mockito.any());
+    }
+
     private static Stream<Arguments> requestValidandoCampos() {
         return Stream.of(
                 Arguments.of(null, "Nome de teste", "Descricao teste", new BigDecimal("100"), 100L),
@@ -449,6 +602,18 @@ public class ProdutoUseCaseTest {
                 Arguments.of(123456789L, "Nome de teste", "Descricao teste", new BigDecimal("100"), -1L),
                 Arguments.of(123456789L, "Nome de teste", "Descricao teste", new BigDecimal("100"), 0L),
                 Arguments.of(123456789L, "Nome de teste", "Descricao teste", new BigDecimal("100"), 1001L)
+        );
+    }
+
+    private static Stream<Arguments> requestValidandoDoisCampos() {
+        return Stream.of(
+                Arguments.of(null, 100L),
+                Arguments.of(-1L, 100L),
+                Arguments.of(0L, 100L),
+                Arguments.of(123456789L, null),
+                Arguments.of(123456789L, -1L),
+                Arguments.of(123456789L, 0L),
+                Arguments.of(123456789L, 1001L)
         );
     }
 

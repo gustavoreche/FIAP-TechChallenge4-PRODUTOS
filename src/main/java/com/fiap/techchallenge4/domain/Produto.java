@@ -24,10 +24,6 @@ public class Produto {
                    final String descricao,
                    final BigDecimal preco,
                    final Long quantidade) {
-        if (Objects.isNull(ean) || ean <= 0) {
-            throw new IllegalArgumentException("EAN NAO PODE SER NULO OU MENOR E IGUAL A ZERO!");
-        }
-
         if (Objects.isNull(nome) || nome.isEmpty()) {
             throw new IllegalArgumentException("NOME NAO PODE SER NULO OU VAZIO!");
         }
@@ -46,15 +42,11 @@ public class Produto {
             throw new IllegalArgumentException("PRECO NAO PODE SER NULO OU MENOR E IGUAL A ZERO!");
         }
 
-        if (Objects.isNull(quantidade) || (quantidade <= 0 || quantidade > 1000)) {
-            throw new IllegalArgumentException("QUANTIDADE NAO PODE SER NULO OU MENOR E IGUAL A ZERO E MAIOR QUE 1000!");
-        }
-
         this.ean = new Ean(ean).getNumero();
         this.nome = nome;
         this.descricao = descricao;
         this.preco = preco;
-        this.quantidade = quantidade;
+        this.quantidade = new Quantidade(quantidade).getNumero();
     }
 
 }

@@ -2,6 +2,7 @@ package com.fiap.techchallenge4.useCase.impl;
 
 import com.fiap.techchallenge4.domain.Ean;
 import com.fiap.techchallenge4.domain.Produto;
+import com.fiap.techchallenge4.domain.Quantidade;
 import com.fiap.techchallenge4.infrastructure.controller.dto.AtualizaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.CriaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.ProdutoDTO;
@@ -136,6 +137,22 @@ public class ProdutoUseCaseImpl implements ProdutoUseCase {
                 produto.getQuantidade(),
                 produto.getDataDeCriacao()
         );
+
+    }
+
+    @Override
+    public Boolean temEstoque(final Long ean,
+                              final Long quantidade) {
+        final var eanObjeto = new Ean(ean);
+        final var quantidadeObjeto = new Quantidade(quantidade);
+
+        final var produtoNaBase = this.repository.findById(eanObjeto.getNumero());
+        if(produtoNaBase.isEmpty()) {
+            System.out.println("Produto não está cadastrado");
+            return null;
+        }
+        final var produto = produtoNaBase.get();
+        return produto.getQuantidade() >= quantidadeObjeto.getNumero();
 
     }
 
