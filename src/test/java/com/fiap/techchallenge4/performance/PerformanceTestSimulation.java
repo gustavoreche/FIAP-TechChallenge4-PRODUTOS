@@ -53,6 +53,11 @@ public class PerformanceTestSimulation extends Simulation {
             .header("Content-Type", "application/json")
             .check(status().is(200));
 
+    ActionBuilder temEstoqueProdutoRequest = http("tem estoque produto")
+            .get("/produto/${ean}/1")
+            .header("Content-Type", "application/json")
+            .check(status().is(200));
+
     ScenarioBuilder cenarioCadastraProduto = scenario("Cadastra produto")
             .exec(session -> {
                 long ean = System.currentTimeMillis();
@@ -83,6 +88,14 @@ public class PerformanceTestSimulation extends Simulation {
             })
             .exec(cadastraProdutoRequest)
             .exec(buscaProdutoRequest);
+
+    ScenarioBuilder cenarioTemEstoqueProduto = scenario("Tem estoque produto")
+            .exec(session -> {
+                long ean = System.currentTimeMillis() + 999999999L;
+                return session.set("ean", ean);
+            })
+            .exec(cadastraProdutoRequest)
+            .exec(temEstoqueProdutoRequest);
 
 
     {
@@ -115,6 +128,15 @@ public class PerformanceTestSimulation extends Simulation {
                                 .to(1)
                                 .during(Duration.ofSeconds(10))),
                 cenarioBuscaProduto.injectOpen(
+                        rampUsersPerSec(1)
+                                .to(10)
+                                .during(Duration.ofSeconds(10)),
+                        constantUsersPerSec(10)
+                                .during(Duration.ofSeconds(20)),
+                        rampUsersPerSec(10)
+                                .to(1)
+                                .during(Duration.ofSeconds(10))),
+                cenarioTemEstoqueProduto.injectOpen(
                         rampUsersPerSec(1)
                                 .to(10)
                                 .during(Duration.ofSeconds(10)),

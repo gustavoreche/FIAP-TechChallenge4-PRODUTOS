@@ -16,4 +16,7 @@ public interface ProdutoUseCase {
     boolean deleta(final Long ean);
 
     ProdutoDTO busca(final Long ean);
+
+    Boolean temEstoque(final Long ean,
+                       final Long quantidade);
 }

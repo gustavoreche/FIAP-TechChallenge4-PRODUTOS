@@ -273,6 +273,79 @@ public class ProdutoControllerTest {
         Assertions.assertEquals(HttpStatus.NO_CONTENT, produto.getStatusCode());
     }
 
+    @Test
+    public void temEstoque_deveRetornar200_estoqueOk_buscaNaBaseDeDados() {
+        // preparação
+        var service = Mockito.mock(ProdutoUseCaseImpl.class);
+        Mockito.when(service.temEstoque(
+                7894900011517L,1L
+                        )
+                )
+                .thenReturn(
+                        true
+                );
+
+        var controller = new ProdutoController(service);
+
+        // execução
+        var produto = controller.temEstoque(
+                7894900011517L,
+                1L
+        );
+
+        // avaliação
+        Assertions.assertEquals(HttpStatus.OK, produto.getStatusCode());
+    }
+
+    @Test
+    public void temEstoque_deveRetornar200_estoqueNaoOk_buscaNaBaseDeDados() {
+        // preparação
+        var service = Mockito.mock(ProdutoUseCaseImpl.class);
+        Mockito.when(service.temEstoque(
+                                7894900011517L,1L
+                        )
+                )
+                .thenReturn(
+                        false
+                );
+
+        var controller = new ProdutoController(service);
+
+        // execução
+        var produto = controller.temEstoque(
+                7894900011517L,
+                1L
+        );
+
+        // avaliação
+        Assertions.assertEquals(HttpStatus.OK, produto.getStatusCode());
+    }
+
+    @Test
+    public void temEstoque_deveRetornar204_naoEncontraNaBaseDeDados() {
+        // preparação
+        var service = Mockito.mock(ProdutoUseCaseImpl.class);
+        Mockito.when(service.temEstoque(
+                                7894900011517L,
+                1L
+                        )
+                )
+                .thenReturn(
+                        null
+                );
+
+        var controller = new ProdutoController(service);
+
+        // execução
+        var produto = controller.temEstoque(
+                7894900011517L,
+                1L
+        );
+
+        // avaliação
+        Assertions.assertEquals(HttpStatus.NO_CONTENT, produto.getStatusCode());
+    }
+
     @ParameterizedTest
     @MethodSource("requestValidandoCampos")
     public void cadastra_camposInvalidos_naoBuscaNaBaseDeDados(Long ean,
@@ -392,6 +465,32 @@ public class ProdutoControllerTest {
         });
     }
 
+    @ParameterizedTest
+    @MethodSource("requestValidandoDoisCampos")
+    public void atualiza_camposInvalidos_naoBuscaNaBaseDeDados(Long ean,
+                                                               Long quantidade) {
+        // preparação
+        var service = Mockito.mock(ProdutoUseCaseImpl.class);
+        Mockito.doThrow(
+                        new IllegalArgumentException("Campos inválidos!")
+                )
+                .when(service)
+                .temEstoque(
+                        any(Long.class),
+                        any(Long.class)
+                );
+
+        var controller = new ProdutoController(service);
+
+        // execução e avaliação
+        var excecao = Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            controller.temEstoque(
+                    Objects.isNull(ean) ? -1L : ean,
+                    Objects.isNull(quantidade) ? -1L : quantidade
+            );
+        });
+    }
+
     private static Stream<Arguments> requestValidandoCampos() {
         return Stream.of(
                 Arguments.of(null, "Nome de teste", "Descricao teste", new BigDecimal("100"), 100L),
@@ -414,6 +513,18 @@ public class ProdutoControllerTest {
                 Arguments.of(123456789L, "Nome de teste", "Descricao teste", new BigDecimal("100"), -1L),
                 Arguments.of(123456789L, "Nome de teste", "Descricao teste", new BigDecimal("100"), 0L),
                 Arguments.of(123456789L, "Nome de teste", "Descricao teste", new BigDecimal("100"), 1001L)
+        );
+    }
+
+    private static Stream<Arguments> requestValidandoDoisCampos() {
+        return Stream.of(
+                Arguments.of(null, 100L),
+                Arguments.of(-1L, 100L),
+                Arguments.of(0L, 100L),
+                Arguments.of(123456789L, null),
+                Arguments.of(123456789L, -1L),
+                Arguments.of(123456789L, 0L),
+                Arguments.of(123456789L, 1001L)
         );
     }
 

@@ -369,6 +369,117 @@ public class ProdutoControllerIT {
         Assertions.assertEquals(0, this.produtoRepository.findAll().size());
     }
 
+    @Test
+    public void temEstoque_deveRetornar200_quantidadeIgual_buscaNaBaseDeDados() throws Exception {
+
+        this.produtoRepository.save(ProdutoEntity.builder()
+                .ean(7894900011517L)
+                .nome("Produto Teste")
+                .descricao("Descricao do Produto Teste")
+                .preco(new BigDecimal("100"))
+                .quantidade(100L)
+                .dataDeCriacao(LocalDateTime.now())
+                .build());
+
+        var response = this.mockMvc
+                .perform(MockMvcRequestBuilders.get(URL_PRODUTO_COM_EAN_E_QUANTIDADE
+                                .replace("{ean}", "7894900011517")
+                                .replace("{quantidade}", "100")
+                        )
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers
+                        .status()
+                        .isOk()
+                )
+                .andReturn();
+        var responseAppString = response.getResponse().getContentAsString();
+        var responseApp = this.objectMapper
+                .readValue(responseAppString, new TypeReference<Boolean>() {});
+
+        Assertions.assertEquals(1, this.produtoRepository.findAll().size());
+        Assertions.assertTrue(responseApp);
+    }
+
+    @Test
+    public void temEstoque_deveRetornar200_quantidadeMenor_buscaNaBaseDeDados() throws Exception {
+
+        this.produtoRepository.save(ProdutoEntity.builder()
+                .ean(7894900011517L)
+                .nome("Produto Teste")
+                .descricao("Descricao do Produto Teste")
+                .preco(new BigDecimal("100"))
+                .quantidade(100L)
+                .dataDeCriacao(LocalDateTime.now())
+                .build());
+
+        var response = this.mockMvc
+                .perform(MockMvcRequestBuilders.get(URL_PRODUTO_COM_EAN_E_QUANTIDADE
+                                .replace("{ean}", "7894900011517")
+                                .replace("{quantidade}", "99")
+                        )
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers
+                        .status()
+                        .isOk()
+                )
+                .andReturn();
+        var responseAppString = response.getResponse().getContentAsString();
+        var responseApp = this.objectMapper
+                .readValue(responseAppString, new TypeReference<Boolean>() {});
+
+        Assertions.assertEquals(1, this.produtoRepository.findAll().size());
+        Assertions.assertTrue(responseApp);
+    }
+
+    @Test
+    public void temEstoque_deveRetornar200_quantidadeMaior_buscaNaBaseDeDados() throws Exception {
+
+        this.produtoRepository.save(ProdutoEntity.builder()
+                .ean(7894900011517L)
+                .nome("Produto Teste")
+                .descricao("Descricao do Produto Teste")
+                .preco(new BigDecimal("100"))
+                .quantidade(100L)
+                .dataDeCriacao(LocalDateTime.now())
+                .build());
+
+        var response = this.mockMvc
+                .perform(MockMvcRequestBuilders.get(URL_PRODUTO_COM_EAN_E_QUANTIDADE
+                                .replace("{ean}", "7894900011517")
+                                .replace("{quantidade}", "101")
+                        )
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers
+                        .status()
+                        .isOk()
+                )
+                .andReturn();
+        var responseAppString = response.getResponse().getContentAsString();
+        var responseApp = this.objectMapper
+                .readValue(responseAppString, new TypeReference<Boolean>() {});
+
+        Assertions.assertEquals(1, this.produtoRepository.findAll().size());
+        Assertions.assertFalse(responseApp);
+    }
+
+    @Test
+    public void temEstoque_deveRetornar204_naoEncontraNaBaseDeDados() throws Exception {
+
+        this.mockMvc
+                .perform(MockMvcRequestBuilders.get(URL_PRODUTO_COM_EAN_E_QUANTIDADE
+                                .replace("{ean}", "7894900011517")
+                                .replace("{quantidade}", "100")
+                        )
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers
+                        .status()
+                        .isNoContent()
+                )
+                .andReturn();
+
+        Assertions.assertEquals(0, this.produtoRepository.findAll().size());
+    }
+
     @ParameterizedTest
     @MethodSource("requestValidandoCampos")
     public void cadastra_camposInvalidos_naoBuscaNaBaseDeDados(Long ean,
@@ -456,6 +567,23 @@ public class ProdutoControllerIT {
                 );
     }
 
+    @ParameterizedTest
+    @MethodSource("requestValidandoDoisCampos")
+    public void temEstoque_camposInvalidos_naoBuscaNaBaseDeDados(Long ean,
+                                                                 Long quantidade) throws Exception {
+
+        this.mockMvc
+                .perform(MockMvcRequestBuilders.get(URL_PRODUTO_COM_EAN_E_QUANTIDADE
+                                .replace("{ean}", ean.toString())
+                                .replace("{quantidade}", quantidade.toString())
+                        )
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers
+                        .status()
+                        .isBadRequest()
+                );
+    }
+
     private static Stream<Arguments> requestValidandoCampos() {
         return Stream.of(
                 Arguments.of(-1L, "Nome de teste", "Descricao teste", new BigDecimal("100"), 100L),
@@ -475,6 +603,16 @@ public class ProdutoControllerIT {
                 Arguments.of(123456789L, "Nome de teste", "Descricao teste", new BigDecimal("100"), -1L),
                 Arguments.of(123456789L, "Nome de teste", "Descricao teste", new BigDecimal("100"), 0L),
                 Arguments.of(123456789L, "Nome de teste", "Descricao teste", new BigDecimal("100"), 1001L)
+        );
+    }
+
+    private static Stream<Arguments> requestValidandoDoisCampos() {
+        return Stream.of(
+                Arguments.of(-1L, 100L),
+                Arguments.of(0L, 100L),
+                Arguments.of(123456789L, -1L),
+                Arguments.of(123456789L, 0L),
+                Arguments.of(123456789L, 1001L)
         );
     }
 
