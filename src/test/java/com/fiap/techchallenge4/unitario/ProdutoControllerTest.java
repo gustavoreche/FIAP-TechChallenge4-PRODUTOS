@@ -3,16 +3,19 @@ package com.fiap.techchallenge4.unitario;
 import com.fiap.techchallenge4.infrastructure.controller.ProdutoController;
 import com.fiap.techchallenge4.infrastructure.controller.dto.AtualizaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.CriaProdutoDTO;
+import com.fiap.techchallenge4.infrastructure.controller.dto.ProdutoDTO;
 import com.fiap.techchallenge4.useCase.impl.ProdutoUseCaseImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -171,6 +174,105 @@ public class ProdutoControllerTest {
         Assertions.assertEquals(HttpStatus.NO_CONTENT, produto.getStatusCode());
     }
 
+    @Test
+    public void deleta_deveRetornar200_deletaNaBaseDeDados() {
+        // preparação
+        var service = Mockito.mock(ProdutoUseCaseImpl.class);
+        Mockito.when(service.deleta(
+                                any(Long.class)
+                        )
+                )
+                .thenReturn(
+                        true
+                );
+
+        var controller = new ProdutoController(service);
+
+        // execução
+        var produto = controller.deleta(
+                7894900011517L
+        );
+
+        // avaliação
+        Assertions.assertEquals(HttpStatus.OK, produto.getStatusCode());
+    }
+
+    @Test
+    public void deleta_deveRetornar204_naoDeletaNaBaseDeDados() {
+        // preparação
+        var service = Mockito.mock(ProdutoUseCaseImpl.class);
+        Mockito.when(service.deleta(
+                                any(Long.class)
+                        )
+                )
+                .thenReturn(
+                        false
+                );
+
+        var controller = new ProdutoController(service);
+
+        // execução
+        var produto = controller.deleta(
+                7894900011517L
+        );
+
+        // avaliação
+        Assertions.assertEquals(HttpStatus.NO_CONTENT, produto.getStatusCode());
+    }
+
+    @Test
+    public void busca_deveRetornar200_buscaNaBaseDeDados() {
+        // preparação
+        var service = Mockito.mock(ProdutoUseCaseImpl.class);
+        Mockito.when(service.busca(
+                        7894900011517L
+                        )
+                )
+                .thenReturn(
+                        new ProdutoDTO(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100L,
+                                LocalDateTime.now()
+                        )
+                );
+
+        var controller = new ProdutoController(service);
+
+        // execução
+        var produto = controller.busca(
+                7894900011517L
+        );
+
+        // avaliação
+        Assertions.assertEquals(HttpStatus.OK, produto.getStatusCode());
+    }
+
+    @Test
+    public void busca_deveRetornar204_naoEncontraNaBaseDeDados() {
+        // preparação
+        var service = Mockito.mock(ProdutoUseCaseImpl.class);
+        Mockito.when(service.busca(
+                        7894900011517L
+                        )
+                )
+                .thenReturn(
+                        null
+                );
+
+        var controller = new ProdutoController(service);
+
+        // execução
+        var produto = controller.busca(
+                7894900011517L
+        );
+
+        // avaliação
+        Assertions.assertEquals(HttpStatus.NO_CONTENT, produto.getStatusCode());
+    }
+
     @ParameterizedTest
     @MethodSource("requestValidandoCampos")
     public void cadastra_camposInvalidos_naoBuscaNaBaseDeDados(Long ean,
@@ -234,6 +336,58 @@ public class ProdutoControllerTest {
                             preco,
                             quantidade
                     )
+            );
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {
+            -1L,
+            0
+    })
+    public void deleta_camposInvalidos_naoDeletaNaBaseDeDados(Long ean) {
+        // preparação
+        var service = Mockito.mock(ProdutoUseCaseImpl.class);
+        Mockito.doThrow(
+                        new IllegalArgumentException("Campos inválidos!")
+                )
+                .when(service)
+                .deleta(
+                        any(Long.class)
+                );
+
+        var controller = new ProdutoController(service);
+
+        // execução e avaliação
+        var excecao = Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            controller.deleta(
+                    ean
+            );
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {
+            -1L,
+            0
+    })
+    public void busca_camposInvalidos_naoBuscaNaBaseDeDados(Long ean) {
+        // preparação
+        var service = Mockito.mock(ProdutoUseCaseImpl.class);
+        Mockito.doThrow(
+                        new IllegalArgumentException("Campos inválidos!")
+                )
+                .when(service)
+                .busca(
+                        any(Long.class)
+                );
+
+        var controller = new ProdutoController(service);
+
+        // execução e avaliação
+        var excecao = Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            controller.busca(
+                    ean
             );
         });
     }

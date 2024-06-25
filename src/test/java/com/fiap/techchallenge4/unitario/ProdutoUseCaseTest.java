@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.launch.JobLauncher;
@@ -155,19 +156,6 @@ public class ProdutoUseCaseTest {
 
         Mockito.when(repository.findById(Mockito.any()))
                 .thenReturn(
-                        Optional.of(
-                                new ProdutoEntity(
-                                        7894900011517L,
-                                        "Produto Teste",
-                                        "Descrição do Produto Teste",
-                                        new BigDecimal("100"),
-                                        100,
-                                        LocalDateTime.now()
-                                )
-                        )
-                );
-        Mockito.when(repository.findById(Mockito.any()))
-                .thenReturn(
                         Optional.empty()
                 );
 
@@ -187,6 +175,115 @@ public class ProdutoUseCaseTest {
         // avaliação
         verify(repository, times(1)).findById(Mockito.any());
         verify(repository, times(0)).save(Mockito.any());
+    }
+
+    @Test
+    public void deleta_deletaNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.doNothing().when(repository).deleteById(Mockito.any());
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.of(new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        ))
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução
+        service.deleta(
+                7894900011517L
+        );
+
+        // avaliação
+        verify(repository, times(1)).findById(Mockito.any());
+        verify(repository, times(1)).deleteById(Mockito.any());
+    }
+
+    @Test
+    public void deleta_produtoNaoEstaCadastrado_naoDeletaNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.empty()
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução
+        service.deleta(
+                7894900011517L
+        );
+
+        // avaliação
+        verify(repository, times(1)).findById(Mockito.any());
+        verify(repository, times(0)).deleteById(Mockito.any());
+    }
+
+    @Test
+    public void busca_buscaNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.of(new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        ))
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução
+        service.busca(
+                7894900011517L
+        );
+
+        // avaliação
+        verify(repository, times(1)).findById(Mockito.any());
+    }
+
+    @Test
+    public void busca_produtoNaoEstaCadastrado_naoEncontraNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.empty()
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução
+        service.busca(
+                7894900011517L
+        );
+
+        // avaliação
+        verify(repository, times(1)).findById(Mockito.any());
     }
 
     @ParameterizedTest
@@ -280,6 +377,54 @@ public class ProdutoUseCaseTest {
             );
         });
         verify(repository, times(0)).save(Mockito.any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {
+            -1000,
+            -1L,
+            0
+    })
+    public void deleta_camposInvalidos_naoDeletaNaBaseDeDados(Long ean) {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução e avaliação
+        var excecao = Assertions.assertThrows(RuntimeException.class, () -> {
+            service.deleta(
+                    ean == -1000 ? null : ean
+            );
+        });
+        verify(repository, times(0)).findById(Mockito.any());
+        verify(repository, times(0)).deleteById(Mockito.any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {
+            -1000,
+            -1L,
+            0
+    })
+    public void busca_camposInvalidos_naoBuscaNaBaseDeDados(Long ean) {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução e avaliação
+        var excecao = Assertions.assertThrows(RuntimeException.class, () -> {
+            service.busca(
+                    ean == -1000 ? null : ean
+            );
+        });
+        verify(repository, times(0)).findById(Mockito.any());
+        verify(repository, times(0)).deleteById(Mockito.any());
     }
 
     private static Stream<Arguments> requestValidandoCampos() {
