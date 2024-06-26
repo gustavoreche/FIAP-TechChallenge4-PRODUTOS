@@ -14,10 +14,4 @@ public class TratamentoError {
 		return ex.getMessage();
 	}
 
-	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-	@ExceptionHandler(Exception.class)
-	public String trataErroNaoMapeado(Exception ex) {
-		return ex.getMessage();
-	}
-
 }
