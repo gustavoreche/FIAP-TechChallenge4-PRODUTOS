@@ -1,5 +1,6 @@
 package com.fiap.techchallenge4.unitario;
 
+import com.fiap.techchallenge4.infrastructure.consumer.response.BaixaNoEstoqueDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.AtualizaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.CriaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.model.ProdutoEntity;
@@ -406,6 +407,139 @@ public class ProdutoUseCaseTest {
         verify(repository, times(1)).findById(Mockito.any());
     }
 
+    @Test
+    public void baixaNoEstoque_quantidadeIgual_buscaNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.of(new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        ))
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução
+        service.baixaNoEstoque(
+                new BaixaNoEstoqueDTO(
+                        7894900011517L,
+                        100L
+                )
+        );
+
+        // avaliação
+        verify(repository, times(1)).findById(Mockito.any());
+        verify(repository, times(1)).save(Mockito.any());
+    }
+
+    @Test
+    public void baixaNoEstoque_quantidadeMenor_buscaNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.of(new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        ))
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução
+        service.baixaNoEstoque(
+                new BaixaNoEstoqueDTO(
+                        7894900011517L,
+                        99L
+                )
+        );
+
+        // avaliação
+        verify(repository, times(1)).findById(Mockito.any());
+        verify(repository, times(1)).save(Mockito.any());
+    }
+
+    @Test
+    public void baixaNoEstoque_quantidadeMaior_buscaNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.of(new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        ))
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução e avaliação
+        var excecao = Assertions.assertThrows(RuntimeException.class, () -> {
+            service.baixaNoEstoque(
+                    new BaixaNoEstoqueDTO(
+                            7894900011517L,
+                            101L
+                    )
+            );
+        });
+
+        // avaliação
+        verify(repository, times(1)).findById(Mockito.any());
+        verify(repository, times(0)).save(Mockito.any());
+    }
+
+    @Test
+    public void baixaNoEstoque_produtoNaoEstaCadastrado_naoEncontraNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.empty()
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução e avaliação
+        var excecao = Assertions.assertThrows(RuntimeException.class, () -> {
+            service.baixaNoEstoque(
+                    new BaixaNoEstoqueDTO(
+                            7894900011517L,
+                            101L
+                    )
+            );
+        });
+
+        // avaliação
+        verify(repository, times(1)).findById(Mockito.any());
+        verify(repository, times(0)).save(Mockito.any());
+    }
+
     @ParameterizedTest
     @MethodSource("requestValidandoCampos")
     public void cadastra_camposInvalidos_naoSalvaNaBaseDeDados(Long ean,
@@ -578,6 +712,42 @@ public class ProdutoUseCaseTest {
             );
         });
         verify(repository, times(0)).findById(Mockito.any());
+    }
+
+    @ParameterizedTest
+    @MethodSource("requestValidandoDoisCampos")
+    public void baixaNoEstoque_camposInvalidos_naoEntraNoFluxo(Long ean,
+                                                               Long quantidade) {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.of(new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        ))
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução e avaliação
+        var excecao = Assertions.assertThrows(RuntimeException.class, () -> {
+            service.baixaNoEstoque(
+                    new BaixaNoEstoqueDTO(
+                            ean,
+                            quantidade
+                    )
+            );
+        });
+        verify(repository, times(0)).findById(Mockito.any());
+        verify(repository, times(0)).save(Mockito.any());
     }
 
     private static Stream<Arguments> requestValidandoCampos() {

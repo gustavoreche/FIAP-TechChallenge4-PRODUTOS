@@ -1,16 +1,10 @@
 package com.fiap.techchallenge4.domain;
 
-import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.util.Objects;
 
-@NoArgsConstructor
 @Getter
-@Setter
-@Builder
 public class Quantidade {
     private Long numero;
 

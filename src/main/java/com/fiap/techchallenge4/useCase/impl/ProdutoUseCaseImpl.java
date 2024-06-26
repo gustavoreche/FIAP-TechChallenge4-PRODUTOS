@@ -3,6 +3,7 @@ package com.fiap.techchallenge4.useCase.impl;
 import com.fiap.techchallenge4.domain.Ean;
 import com.fiap.techchallenge4.domain.Produto;
 import com.fiap.techchallenge4.domain.Quantidade;
+import com.fiap.techchallenge4.infrastructure.consumer.response.BaixaNoEstoqueDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.AtualizaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.CriaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.ProdutoDTO;
@@ -15,6 +16,7 @@ import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service
 public class ProdutoUseCaseImpl implements ProdutoUseCase {
@@ -123,19 +125,18 @@ public class ProdutoUseCaseImpl implements ProdutoUseCase {
     public ProdutoDTO busca(final Long ean) {
         final var eanObjeto = new Ean(ean);
 
-        final var produtoNaBase = this.repository.findById(eanObjeto.getNumero());
-        if(produtoNaBase.isEmpty()) {
+        final var produtoNaBase = this.pegaProdutoNaBaseDeDados(eanObjeto.getNumero());
+        if(Objects.isNull(produtoNaBase)) {
             System.out.println("Produto não está cadastrado");
             return null;
         }
-        final var produto = produtoNaBase.get();
         return new ProdutoDTO(
-                produto.getEan(),
-                produto.getNome(),
-                produto.getDescricao(),
-                produto.getPreco(),
-                produto.getQuantidade(),
-                produto.getDataDeCriacao()
+                produtoNaBase.getEan(),
+                produtoNaBase.getNome(),
+                produtoNaBase.getDescricao(),
+                produtoNaBase.getPreco(),
+                produtoNaBase.getQuantidade(),
+                produtoNaBase.getDataDeCriacao()
         );
 
     }
@@ -146,14 +147,44 @@ public class ProdutoUseCaseImpl implements ProdutoUseCase {
         final var eanObjeto = new Ean(ean);
         final var quantidadeObjeto = new Quantidade(quantidade);
 
-        final var produtoNaBase = this.repository.findById(eanObjeto.getNumero());
+        final var produto = this.pegaProdutoNaBaseDeDados(eanObjeto.getNumero());
+        if(Objects.isNull(produto)) {
+            return null;
+        }
+        return produto.getQuantidade() >= quantidadeObjeto.getNumero();
+
+    }
+
+    private ProdutoEntity pegaProdutoNaBaseDeDados(final Long ean) {
+        final var produtoNaBase = this.repository.findById(ean);
         if(produtoNaBase.isEmpty()) {
             System.out.println("Produto não está cadastrado");
             return null;
         }
-        final var produto = produtoNaBase.get();
-        return produto.getQuantidade() >= quantidadeObjeto.getNumero();
+        return produtoNaBase.get();
+    }
 
+    @Override
+    public void baixaNoEstoque(final BaixaNoEstoqueDTO evento) {
+        final var eanObjeto = new Ean(evento.ean());
+        final var quantidadeObjeto = new Quantidade(evento.quantidade());
+
+        final var produto = this.pegaProdutoNaBaseDeDados(eanObjeto.getNumero());
+        if(Objects.nonNull(produto) && produto.getQuantidade() >= quantidadeObjeto.getNumero()) {
+            var produtoEntity = new ProdutoEntity(
+                    produto.getEan(),
+                    produto.getNome(),
+                    produto.getDescricao(),
+                    produto.getPreco(),
+                    produto.getQuantidade() - quantidadeObjeto.getNumero(),
+                    LocalDateTime.now()
+            );
+
+            this.repository.save(produtoEntity);
+            return;
+        }
+        System.out.println("Produto não tem estoque suficiente");
+        throw new RuntimeException("Produto não tem estoque suficiente");
     }
 
 }
