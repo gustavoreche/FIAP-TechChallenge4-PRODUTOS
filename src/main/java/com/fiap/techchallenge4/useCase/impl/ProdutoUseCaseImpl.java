@@ -3,7 +3,8 @@ package com.fiap.techchallenge4.useCase.impl;
 import com.fiap.techchallenge4.domain.Ean;
 import com.fiap.techchallenge4.domain.Produto;
 import com.fiap.techchallenge4.domain.Quantidade;
-import com.fiap.techchallenge4.infrastructure.consumer.response.BaixaNoEstoqueDTO;
+import com.fiap.techchallenge4.domain.StatusEstoqueEnum;
+import com.fiap.techchallenge4.infrastructure.consumer.response.AtualizaEstoqueDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.AtualizaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.CriaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.ProdutoDTO;
@@ -165,23 +166,45 @@ public class ProdutoUseCaseImpl implements ProdutoUseCase {
     }
 
     @Override
-    public void baixaNoEstoque(final BaixaNoEstoqueDTO evento) {
+    public void atualizaEstoque(final AtualizaEstoqueDTO evento) {
         final var eanObjeto = new Ean(evento.ean());
         final var quantidadeObjeto = new Quantidade(evento.quantidade());
+        final var status = StatusEstoqueEnum.pegaStatusEnum(evento.statusEstoque());
 
         final var produto = this.pegaProdutoNaBaseDeDados(eanObjeto.getNumero());
-        if(Objects.nonNull(produto) && produto.getQuantidade() >= quantidadeObjeto.getNumero()) {
-            var produtoEntity = new ProdutoEntity(
-                    produto.getEan(),
-                    produto.getNome(),
-                    produto.getDescricao(),
-                    produto.getPreco(),
-                    produto.getQuantidade() - quantidadeObjeto.getNumero(),
-                    LocalDateTime.now()
-            );
+        if(Objects.nonNull(produto)) {
+            var novaQuantidade = produto.getQuantidade();
 
-            this.repository.save(produtoEntity);
-            return;
+            if(status.equals(StatusEstoqueEnum.RETIRA_DO_ESTOQUE) && produto.getQuantidade() >= quantidadeObjeto.getNumero()) {
+                novaQuantidade = produto.getQuantidade() - quantidadeObjeto.getNumero();
+                var produtoEntity = new ProdutoEntity(
+                        produto.getEan(),
+                        produto.getNome(),
+                        produto.getDescricao(),
+                        produto.getPreco(),
+                        novaQuantidade,
+                        LocalDateTime.now()
+                );
+
+                this.repository.save(produtoEntity);
+                return;
+            }
+
+            else if (status.equals(StatusEstoqueEnum.VOLTA_PARA_O_ESTOQUE)) {
+                novaQuantidade = produto.getQuantidade() + quantidadeObjeto.getNumero();
+                var produtoEntity = new ProdutoEntity(
+                        produto.getEan(),
+                        produto.getNome(),
+                        produto.getDescricao(),
+                        produto.getPreco(),
+                        novaQuantidade,
+                        LocalDateTime.now()
+                );
+
+                this.repository.save(produtoEntity);
+                return;
+            }
+
         }
         System.out.println("Produto não tem estoque suficiente");
         throw new RuntimeException("Produto não tem estoque suficiente");

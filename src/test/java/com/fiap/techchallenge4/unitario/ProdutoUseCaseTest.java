@@ -1,6 +1,7 @@
 package com.fiap.techchallenge4.unitario;
 
-import com.fiap.techchallenge4.infrastructure.consumer.response.BaixaNoEstoqueDTO;
+import com.fiap.techchallenge4.domain.StatusEstoqueEnum;
+import com.fiap.techchallenge4.infrastructure.consumer.response.AtualizaEstoqueDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.AtualizaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.CriaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.model.ProdutoEntity;
@@ -408,7 +409,7 @@ public class ProdutoUseCaseTest {
     }
 
     @Test
-    public void baixaNoEstoque_quantidadeIgual_buscaNaBaseDeDados() {
+    public void atualizaEstoque_retira_quantidadeIgual_buscaNaBaseDeDados() {
         // preparação
         var repository = Mockito.mock(ProdutoRepository.class);
         var jobLauncher = Mockito.mock(JobLauncher.class);
@@ -429,10 +430,11 @@ public class ProdutoUseCaseTest {
         var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
 
         // execução
-        service.baixaNoEstoque(
-                new BaixaNoEstoqueDTO(
+        service.atualizaEstoque(
+                new AtualizaEstoqueDTO(
                         7894900011517L,
-                        100L
+                        100L,
+                        StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()
                 )
         );
 
@@ -442,7 +444,7 @@ public class ProdutoUseCaseTest {
     }
 
     @Test
-    public void baixaNoEstoque_quantidadeMenor_buscaNaBaseDeDados() {
+    public void atualizaEstoque_retira_quantidadeMenor_buscaNaBaseDeDados() {
         // preparação
         var repository = Mockito.mock(ProdutoRepository.class);
         var jobLauncher = Mockito.mock(JobLauncher.class);
@@ -463,10 +465,11 @@ public class ProdutoUseCaseTest {
         var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
 
         // execução
-        service.baixaNoEstoque(
-                new BaixaNoEstoqueDTO(
+        service.atualizaEstoque(
+                new AtualizaEstoqueDTO(
                         7894900011517L,
-                        99L
+                        99L,
+                        StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()
                 )
         );
 
@@ -476,7 +479,7 @@ public class ProdutoUseCaseTest {
     }
 
     @Test
-    public void baixaNoEstoque_quantidadeMaior_buscaNaBaseDeDados() {
+    public void atualizaEstoque_retira_quantidadeMaior_buscaNaBaseDeDados() {
         // preparação
         var repository = Mockito.mock(ProdutoRepository.class);
         var jobLauncher = Mockito.mock(JobLauncher.class);
@@ -498,10 +501,11 @@ public class ProdutoUseCaseTest {
 
         // execução e avaliação
         var excecao = Assertions.assertThrows(RuntimeException.class, () -> {
-            service.baixaNoEstoque(
-                    new BaixaNoEstoqueDTO(
+            service.atualizaEstoque(
+                    new AtualizaEstoqueDTO(
                             7894900011517L,
-                            101L
+                            101L,
+                            StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()
                     )
             );
         });
@@ -512,7 +516,7 @@ public class ProdutoUseCaseTest {
     }
 
     @Test
-    public void baixaNoEstoque_produtoNaoEstaCadastrado_naoEncontraNaBaseDeDados() {
+    public void atualizaEstoque_retira_produtoNaoEstaCadastrado_naoEncontraNaBaseDeDados() {
         // preparação
         var repository = Mockito.mock(ProdutoRepository.class);
         var jobLauncher = Mockito.mock(JobLauncher.class);
@@ -527,10 +531,11 @@ public class ProdutoUseCaseTest {
 
         // execução e avaliação
         var excecao = Assertions.assertThrows(RuntimeException.class, () -> {
-            service.baixaNoEstoque(
-                    new BaixaNoEstoqueDTO(
+            service.atualizaEstoque(
+                    new AtualizaEstoqueDTO(
                             7894900011517L,
-                            101L
+                            101L,
+                            StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()
                     )
             );
         });
@@ -538,6 +543,41 @@ public class ProdutoUseCaseTest {
         // avaliação
         verify(repository, times(1)).findById(Mockito.any());
         verify(repository, times(0)).save(Mockito.any());
+    }
+
+    @Test
+    public void atualizaEstoque_volta_buscaNaBaseDeDados() {
+        // preparação
+        var repository = Mockito.mock(ProdutoRepository.class);
+        var jobLauncher = Mockito.mock(JobLauncher.class);
+        var importaProdutosJob = Mockito.mock(Job.class);
+
+        Mockito.when(repository.findById(Mockito.any()))
+                .thenReturn(
+                        Optional.of(new ProdutoEntity(
+                                7894900011517L,
+                                "Produto Teste",
+                                "Descrição do Produto Teste",
+                                new BigDecimal("100"),
+                                100,
+                                LocalDateTime.now()
+                        ))
+                );
+
+        var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
+
+        // execução
+        service.atualizaEstoque(
+                new AtualizaEstoqueDTO(
+                        7894900011517L,
+                        99L,
+                        StatusEstoqueEnum.VOLTA_PARA_O_ESTOQUE.name()
+                )
+        );
+
+        // avaliação
+        verify(repository, times(1)).findById(Mockito.any());
+        verify(repository, times(1)).save(Mockito.any());
     }
 
     @ParameterizedTest
@@ -715,9 +755,10 @@ public class ProdutoUseCaseTest {
     }
 
     @ParameterizedTest
-    @MethodSource("requestValidandoDoisCampos")
-    public void baixaNoEstoque_camposInvalidos_naoEntraNoFluxo(Long ean,
-                                                               Long quantidade) {
+    @MethodSource("requestValidandoTresCampos")
+    public void atualizaEstoque_camposInvalidos_naoEntraNoFluxo(Long ean,
+                                                                Long quantidade,
+                                                                String statusEstoque) {
         // preparação
         var repository = Mockito.mock(ProdutoRepository.class);
         var jobLauncher = Mockito.mock(JobLauncher.class);
@@ -739,10 +780,11 @@ public class ProdutoUseCaseTest {
 
         // execução e avaliação
         var excecao = Assertions.assertThrows(RuntimeException.class, () -> {
-            service.baixaNoEstoque(
-                    new BaixaNoEstoqueDTO(
+            service.atualizaEstoque(
+                    new AtualizaEstoqueDTO(
                             ean,
-                            quantidade
+                            quantidade,
+                            statusEstoque
                     )
             );
         });
@@ -784,6 +826,22 @@ public class ProdutoUseCaseTest {
                 Arguments.of(123456789L, -1L),
                 Arguments.of(123456789L, 0L),
                 Arguments.of(123456789L, 1001L)
+        );
+    }
+
+    private static Stream<Arguments> requestValidandoTresCampos() {
+        return Stream.of(
+                Arguments.of(null, 100L, StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()),
+                Arguments.of(-1L, 100L, StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()),
+                Arguments.of(0L, 100L, StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()),
+                Arguments.of(123456789L, null, StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()),
+                Arguments.of(123456789L, -1L, StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()),
+                Arguments.of(123456789L, 0L, StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()),
+                Arguments.of(123456789L, 1001L, StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()),
+                Arguments.of(123456789L, 100L, null),
+                Arguments.of(123456789L, 100L, ""),
+                Arguments.of(123456789L, 100L, " "),
+                Arguments.of(123456789L, 100L, "teste")
         );
     }
 

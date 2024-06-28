@@ -1,7 +1,8 @@
 package com.fiap.techchallenge4.integrados;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fiap.techchallenge4.infrastructure.consumer.response.BaixaNoEstoqueDTO;
+import com.fiap.techchallenge4.domain.StatusEstoqueEnum;
+import com.fiap.techchallenge4.infrastructure.consumer.response.AtualizaEstoqueDTO;
 import com.fiap.techchallenge4.infrastructure.model.ProdutoEntity;
 import com.fiap.techchallenge4.infrastructure.repository.ProdutoRepository;
 import org.junit.jupiter.api.*;
@@ -17,7 +18,7 @@ import java.util.concurrent.ExecutionException;
 
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class ConsumerBaixaNoEstoqueIT {
+public class ConsumerAtualizaEstoqueIT {
 
     @Autowired
     private StreamBridge streamBridge;
@@ -39,7 +40,7 @@ public class ConsumerBaixaNoEstoqueIT {
     }
 
     @Test
-    public void baixaNoEstoque_quantidadeIgual_buscaNaBaseDeDados() throws ExecutionException, InterruptedException {
+    public void atualizaEstoque_retira_quantidadeIgual_buscaNaBaseDeDados() throws ExecutionException, InterruptedException {
 
         this.produtoRepository.save(ProdutoEntity.builder()
                 .ean(2222222222L)
@@ -52,7 +53,10 @@ public class ConsumerBaixaNoEstoqueIT {
 
         var producer = CompletableFuture.runAsync(() -> {
             this.streamBridge
-                    .send("produto-atualiza-estoque", new BaixaNoEstoqueDTO(2222222222L, 10L));
+                    .send("produto-atualiza-estoque", new AtualizaEstoqueDTO(
+                            2222222222L,
+                            10L,
+                            StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()));
         });
 
         producer.get();
@@ -64,7 +68,7 @@ public class ConsumerBaixaNoEstoqueIT {
     }
 
     @Test
-    public void baixaNoEstoque_quantidadeMenor_buscaNaBaseDeDados() throws ExecutionException, InterruptedException {
+    public void atualizaEstoque_retira_quantidadeMenor_buscaNaBaseDeDados() throws ExecutionException, InterruptedException {
 
         this.produtoRepository.save(ProdutoEntity.builder()
                 .ean(2222222222L)
@@ -77,7 +81,10 @@ public class ConsumerBaixaNoEstoqueIT {
 
         var producer = CompletableFuture.runAsync(() -> {
             this.streamBridge
-                    .send("produto-atualiza-estoque", new BaixaNoEstoqueDTO(2222222222L, 9L));
+                    .send("produto-atualiza-estoque", new AtualizaEstoqueDTO(
+                            2222222222L,
+                            9L,
+                            StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()));
         });
 
         producer.get();
@@ -89,7 +96,7 @@ public class ConsumerBaixaNoEstoqueIT {
     }
 
     @Test
-    public void baixaNoEstoque_quantidadeMaior_buscaNaBaseDeDados() throws ExecutionException, InterruptedException {
+    public void atualizaEstoque_retira_quantidadeMaior_buscaNaBaseDeDados() throws ExecutionException, InterruptedException {
 
         this.produtoRepository.save(ProdutoEntity.builder()
                 .ean(2222222222L)
@@ -102,7 +109,10 @@ public class ConsumerBaixaNoEstoqueIT {
 
         var producer = CompletableFuture.runAsync(() -> {
             this.streamBridge
-                    .send("produto-atualiza-estoque", new BaixaNoEstoqueDTO(2222222222L, 11L));
+                    .send("produto-atualiza-estoque", new AtualizaEstoqueDTO(
+                            2222222222L,
+                            11L,
+                            StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()));
         });
 
         producer.get();
@@ -111,6 +121,34 @@ public class ConsumerBaixaNoEstoqueIT {
         var produto = this.produtoRepository.findAll().get(0);
 
         Assertions.assertEquals(10, produto.getQuantidade());
+    }
+
+    @Test
+    public void atualizaEstoque_volta_buscaNaBaseDeDados() throws ExecutionException, InterruptedException {
+
+        this.produtoRepository.save(ProdutoEntity.builder()
+                .ean(2222222222L)
+                .nome("Laranja")
+                .descricao("Fruta")
+                .preco(new BigDecimal("3.00"))
+                .quantidade(10)
+                .dataDeCriacao(LocalDateTime.now())
+                .build());
+
+        var producer = CompletableFuture.runAsync(() -> {
+            this.streamBridge
+                    .send("produto-atualiza-estoque", new AtualizaEstoqueDTO(
+                            2222222222L,
+                            9L,
+                            StatusEstoqueEnum.VOLTA_PARA_O_ESTOQUE.name()));
+        });
+
+        producer.get();
+        Thread.sleep(2000);
+
+        var produto = this.produtoRepository.findAll().get(0);
+
+        Assertions.assertEquals(19, produto.getQuantidade());
     }
 
 }
