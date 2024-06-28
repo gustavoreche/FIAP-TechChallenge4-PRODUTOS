@@ -1,6 +1,6 @@
 package com.fiap.techchallenge4.useCase;
 
-import com.fiap.techchallenge4.infrastructure.consumer.response.BaixaNoEstoqueDTO;
+import com.fiap.techchallenge4.infrastructure.consumer.response.AtualizaEstoqueDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.AtualizaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.CriaProdutoDTO;
 import com.fiap.techchallenge4.infrastructure.controller.dto.ProdutoDTO;
@@ -21,5 +21,5 @@ public interface ProdutoUseCase {
     Boolean temEstoque(final Long ean,
                        final Long quantidade);
 
-    void baixaNoEstoque(final BaixaNoEstoqueDTO evento);
+    void atualizaEstoque(final AtualizaEstoqueDTO evento);
 }
