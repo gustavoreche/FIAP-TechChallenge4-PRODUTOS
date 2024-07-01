@@ -50,16 +50,16 @@ public class ProdutoUseCaseImpl implements ProdutoUseCase {
 
     @Override
     public boolean cadastra(final CriaProdutoDTO dadosProduto) {
+        final var produto = new Produto(
+                dadosProduto.ean(),
+                dadosProduto.nome(),
+                dadosProduto.descricao(),
+                dadosProduto.preco(),
+                dadosProduto.quantidade()
+        );
+
         final var produtoNaBase = this.repository.findById(dadosProduto.ean());
         if(produtoNaBase.isEmpty()) {
-            final var produto = new Produto(
-                    dadosProduto.ean(),
-                    dadosProduto.nome(),
-                    dadosProduto.descricao(),
-                    dadosProduto.preco(),
-                    dadosProduto.quantidade()
-            );
-
             var produtoEntity = new ProdutoEntity(
                     produto.getEan(),
                     produto.getNome(),
