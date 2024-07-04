@@ -500,15 +500,13 @@ public class ProdutoUseCaseTest {
         var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
 
         // execução e avaliação
-        var excecao = Assertions.assertThrows(RuntimeException.class, () -> {
-            service.atualizaEstoque(
-                    new AtualizaEstoqueDTO(
-                            7894900011517L,
-                            101L,
-                            StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()
-                    )
-            );
-        });
+        service.atualizaEstoque(
+                new AtualizaEstoqueDTO(
+                        7894900011517L,
+                        101L,
+                        StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()
+                )
+        );
 
         // avaliação
         verify(repository, times(1)).findById(Mockito.any());
@@ -530,15 +528,13 @@ public class ProdutoUseCaseTest {
         var service = new ProdutoUseCaseImpl(repository, jobLauncher, importaProdutosJob);
 
         // execução e avaliação
-        var excecao = Assertions.assertThrows(RuntimeException.class, () -> {
-            service.atualizaEstoque(
-                    new AtualizaEstoqueDTO(
-                            7894900011517L,
-                            101L,
-                            StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()
-                    )
-            );
-        });
+        service.atualizaEstoque(
+                new AtualizaEstoqueDTO(
+                        7894900011517L,
+                        101L,
+                        StatusEstoqueEnum.RETIRA_DO_ESTOQUE.name()
+                )
+        );
 
         // avaliação
         verify(repository, times(1)).findById(Mockito.any());

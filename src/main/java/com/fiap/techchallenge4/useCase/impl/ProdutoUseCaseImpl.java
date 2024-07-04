@@ -207,7 +207,6 @@ public class ProdutoUseCaseImpl implements ProdutoUseCase {
 
         }
         System.out.println("Produto não tem estoque suficiente");
-        throw new RuntimeException("Produto não tem estoque suficiente");
     }
 
 }

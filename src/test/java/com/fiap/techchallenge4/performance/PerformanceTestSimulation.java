@@ -54,7 +54,7 @@ public class PerformanceTestSimulation extends Simulation {
             .check(status().is(200));
 
     ActionBuilder temEstoqueProdutoRequest = http("tem estoque produto")
-            .get("/produto/${ean}/1")
+            .get("/produto/estoque/${ean}/1")
             .header("Content-Type", "application/json")
             .check(status().is(200));
 
@@ -91,7 +91,7 @@ public class PerformanceTestSimulation extends Simulation {
 
     ScenarioBuilder cenarioTemEstoqueProduto = scenario("Tem estoque produto")
             .exec(session -> {
-                long ean = System.currentTimeMillis() + 999999999L;
+                long ean = System.currentTimeMillis() + 9999911111L;
                 return session.set("ean", ean);
             })
             .exec(cadastraProdutoRequest)
